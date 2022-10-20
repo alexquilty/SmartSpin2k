@@ -98,8 +98,9 @@ void PowerTable::processPowerValue(PowerBuffer& powerBuffer, int cadence, Measur
         }
       }
       if (powerBuffer.powerEntry[POWER_SAMPLES - 1].readings == 1) {  // If buffer is full, create a new table entry and clear the buffer.
+        // For troubleshooting purposes, adding powerBuffer to log.
         this->newEntry(powerBuffer);
-        this->toLog();
+        this->toLog(); // For powerTable
         powerBuffer.reset();
       }
     } else {  // Reading was outside the range - clear the buffer and start over.
@@ -151,12 +152,12 @@ void PowerTable::newEntry(PowerBuffer& powerBuffer) {
     }
 
     // calculate average
-    watts          = (watts + powerBuffer.powerEntry[i].watts) / 2;
+    watts          = (watts + powerBuffer.powerEntry[i].watts) / 2; // Watts Dependent on powerBuffer.powerEntry[i].watts
     targetPosition = (targetPosition + powerBuffer.powerEntry[i].targetPosition) / 2;
     cad            = (cad + powerBuffer.powerEntry[i].cad) / 2;
   }
 
-  int i = round(watts / POWERTABLE_INCREMENT);
+  int i = round(watts / POWERTABLE_INCREMENT); // ERROR ROOT
 
   if (i == 1) {  // set the minimum resistance level of the trainer.
     rtConfig.setMinStep(this->powerEntry[i].targetPosition);
@@ -328,6 +329,43 @@ void PowerTable::toLog() {
     sprintf(buffer, oFormat, this->powerEntry[i].targetPosition);
     oString += buffer;
   }
+  SS2K_LOG(POWERTABLE_LOG_TAG, "%s|", oString.c_str());
+}
+
+// Display power buffer in log
+void PowerBuffer::toLog() {
+  int len = 4;
+  for (int i = 0; i < POWER_SAMPLES; i++) {  // Find the longest integer to dynamically size the power table
+    int l = snprintf(nullptr, 0, "%d", this->powerEntry[i].targetPosition);
+    if (len < l) {
+      len = l;
+    }
+  }
+
+  char buffer[len + 2];
+  String oString  = "";
+  char oFormat[5] = "";
+  sprintf(oFormat, "|%%%dd", len);
+
+  for (int i = 0; i < POWER_SAMPLES; i++) {
+    sprintf(buffer, oFormat, this->powerEntry[i].watts);
+    oString += buffer;
+  }
+
+  SS2K_LOG(POWERTABLE_LOG_TAG, "%s|", oString.c_str());
+  oString = "";
+  for (int i = 0; i < POWER_SAMPLES; i++) {
+    sprintf(buffer, oFormat, this->powerEntry[i].cad);
+    oString += buffer;
+  }
+
+  SS2K_LOG(POWERTABLE_LOG_TAG, "%s|", oString.c_str());
+  oString = "";
+  for (int i = 0; i < POWER_SAMPLES; i++) {
+    sprintf(buffer, oFormat, this->powerEntry[i].targetPosition);
+    oString += buffer;
+  }
+  
   SS2K_LOG(POWERTABLE_LOG_TAG, "%s|", oString.c_str());
 }
 

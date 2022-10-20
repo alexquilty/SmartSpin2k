@@ -40,6 +40,7 @@ class PowerBuffer {
   PowerEntry powerEntry[POWER_SAMPLES];
   void set(int);
   void reset();
+  void toLog();
 };
 
 class PowerTable {
